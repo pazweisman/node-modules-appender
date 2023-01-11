@@ -1,0 +1,37 @@
+{
+  "name": "node-modules-appender",
+  "version": "1.0.0",
+  "description": "Development tool for appending node_modules directory contents into checks of text files. It prevent anti viruses software to crash when scanning thousands of small text files.  ",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pazweisman/node-modules-appender.git"
+  },
+  "keywords": [
+    "append",
+    "node_modules"
+  ],
+  "author": "Paz Weisman",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/pazweisman/node-modules-appender/issues"
+  },
+  "homepage": "https://github.com/pazweisman/node-modules-appender#readme",
+  "dependencies": {
+    "chalk": "^5.2.0",
+    "cli-spinners": "^2.7.0",
+    "directory-tree": "^3.5.1",
+    "glob": "^8.0.3",
+    "glob-promise": "^6.0.1",
+    "isbinaryfile": "^5.0.0",
+    "mime-types": "^2.1.35",
+    "node": "^19.3.0",
+    "node_modules-path": "^2.0.7",
+    "uuid": "^9.0.0",
+    "yargs": "^17.6.2"
+  }
+}
