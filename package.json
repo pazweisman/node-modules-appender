@@ -23,6 +23,7 @@
   "homepage": "https://github.com/pazweisman/node-modules-appender#readme",
   "dependencies": {
     "chalk": "^5.2.0",
+    "cli-progress": "^3.11.2",
     "cli-spinners": "^2.7.0",
     "directory-tree": "^3.5.1",
     "glob": "^8.0.3",

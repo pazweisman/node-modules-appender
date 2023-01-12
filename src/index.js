@@ -35,19 +35,3 @@ function housekeep(){
     }
     
 })();
-
-const knownExtenssions = {
-
-}
-
-async function buildFolderTreeIndex(){
-
-}
-
-async function buildFolderTreeFromIndex(){
-
-}
-
-function isTextFile(filePath){
-
-}

@@ -1,5 +1,5 @@
 import path from 'path';
-import { asyncMkdir, asyncReadFile, isDescriptorLine } from './common'
+import { asyncMkdir, asyncReadFile, extractFile } from './common'
 
 export async function restoreFolderTree(destinationFolder, folderStructureFile){
     const content = await asyncReadFile(folderStructureFile, 'utf8');
@@ -13,16 +13,12 @@ export async function restoreFolderTree(destinationFolder, folderStructureFile){
 
 export async function extractVolume(rootDestination, volumeFilePath){
     const content = await asyncReadFile(folderStructureFile, 'utf8');
-    const rows = content.split('\n');
-    for(const row of rows){
-        if(isDescriptorLine(row)){
-
-        }else{
-            
-        }
-    }
+    const files = JSON.parse(content);
+    const promises = files.map(file => extractFile(rootDestination, file));
+    await Promise.all(promises);
+    
 }
 
-export async function extractBinaries(){
-
+export async function extractBinaries(rootDestinationFolder, binariesIndexPath){
+    
 }

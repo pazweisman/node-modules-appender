@@ -12,7 +12,7 @@ export async function objectifyFile(sourceBaseFolder, filePath){
     const fileName = path.basename(filePath);
     const text = asyncReadFile(filePath, 'utf8');
     const encoded = encode(text);
-    return {relativePath, fileName, encoded};
+    return { relativePath, fileName, encoded };
 }
 
 export function extractFile(rootDestinationFolder, fileObject){

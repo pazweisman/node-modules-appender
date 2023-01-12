@@ -1,32 +1,65 @@
 import path from 'path';
-import { promisify } from 'util';
+import { glob } from 'glob-promise'
 import { isBinaryFile } from "isbinaryfile";
 import { v4 as uuidv4 } from 'uuid';
+import { cliProgress } from'cli-progress';
 
-import { asyncMkdir, asyncCopyFile, asyncReadFile, asyncWriteFile, asyncStat, objectifyFile } from './common';
+import { asyncMkdir, asyncCopyFile, asyncWriteFile, asyncStat, objectifyFile } from './common';
 
+export async function buildFolderTreeIndex(allFiles, rootSourceFolder, rootTargetFolder){
+    const result = new Set(allFiles.map(file => path.dirname(file).replace(rootSourceFolder, '')));
+    await asyncWriteFile(`${rootTargetFolder}/folders.idx`, result.join('\n'));
+}
 
-export async function buildFolderTree(sourceFolder, destinationFolder){
+export async function getAllFiles(rootSourceFolder){
+    return await glob( `${rootSourceFolder}/**/*.*`);
+}
 
+export function divideBinariesAndTextFiles(files){
+    const res = {
+        binaries:[],
+        texts:[]
+    }
+
+    for(const file of files){
+        if(isBinaryNaive(file)){
+            res.binaries.push(file);
+        }else{
+            res.texts.push(file);
+        }
+    }
+
+    return res;
 }
 
 async function getChunkSize(filePaths){
-
     const stats = await Promise.all(filePaths.map((filePath => asyncStat(filePath))));
     const totalSize = stats.reduce((acc, stat) => acc += stat.size, 0);
     return totalSize;
 }
 
-export async function append(rootDestinationFolder, textFilePaths){
+//https://www.npmjs.com/package/cli-progress
+export async function append(rootSourceFolder, rootTargetFolder, volumeThreshold = 5){
+    
+    //Scan and build folder tree index
+    //Show spinner
+    const allFiles = await getAllFiles(rootSourceFolder);
+    await buildFolderTreeIndex(allFiles, rootSourceFolder, rootTargetFolder);
+    const dividedFiles = divideBinariesAndTextFiles(allFiles);
+
+    const progress = new cliProgress.SingleBar({
+        format: 'CLI Progress |' + colors.cyan('{bar}') + '| {percentage}% || {value}/{total} Chunks || Speed: {speed}',
+    }, cliProgress.Presets.shades_classic);
+
     let chunkSize = 20;
-    const threshold = 1 * 1024 * 1024 * 5;
-    const chunks = Math.ceil(textFilePaths.length / chunkSize);
+    const threshold = 1 * 1024 * 1024 * volumeThreshold;
+    const chunks = Math.ceil(dividedFiles.texts.length / chunkSize);
 
     let accumulator = 0;
     let chunkFileObjects = [];
 
     for(let index = 0; index < chunks; index++){
-        const chunk = textFilePaths.slice(index * 20, Math.min(textFilePaths.length, (index + 1) * 20));
+        const chunk = dividedFiles.texts.slice(index * 20, Math.min(dividedFiles.texts.length, (index + 1) * 20));
         accumulator += await getChunkSize(chunk);
         const fileObjects = await Promise.all(chunk.map(file => objectifyFile(file)));
         chunkFileObjects.concat(fileObjects);
@@ -66,7 +99,6 @@ export async function saveBinaryFiles(destinationFolder, files){
 export async function isBinary(filePath){
     return await isBinaryFile(filePath);
 }
-
 
 //probably second fastest
 export async function isBinaryByMimeType(filePath){
@@ -113,6 +145,7 @@ export function isBinaryNaive(filePath){
         rb:true,
         log:true        
     };
+
     const ext = path.extname(filePath.replace('.','').toLowerCase());
-    return textFileExtensions.hasOwnProperty(ext); // textFileExtensions[ext] || false;
+    return !textFileExtensions[ext];
 }
