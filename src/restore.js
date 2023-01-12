@@ -1,5 +1,9 @@
 import path from 'path';
-import { asyncMkdir, asyncReadFile, extractFile } from './common'
+import { asyncMkdir, asyncReadFile, extractFile } from './common.js'
+
+export async function restore(sourceFolder, targetFolder){
+    console.log(`restoring ${sourceFolder} into ${targetFolder}`);
+} 
 
 export async function restoreFolderTree(destinationFolder, folderStructureFile){
     const content = await asyncReadFile(folderStructureFile, 'utf8');

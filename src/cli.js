@@ -1,55 +1,49 @@
 import yargs from 'yargs/yargs';
-import { hideBin } from 'yargs/helpers';
 
-// const argv = yargs(hideBin(process.argv)).argv;
+import { append } from './append.js';
+import { restore } from './restore.js';
 
-export default yargs
-  .command(
-    'append',
-    'Appended folder',
-    function (yargs) {
-      return yargs.option('e', {
-        alias: 'extract',
-        describe: 'Restore'
+export function execute(){
+  yargs(process.argv.slice(2))
+  .scriptName("nodeappender")
+  .usage('$0 <cmd> [args]')
+  .command('append [source] [target] [size]', 'append files into volumes', (yargs) => {
+      yargs.positional('source', {
+      type: 'string',
+      default: './node_modules',
+      describe: 'folder of the files to append.'
+      });
+
+      yargs.positional('target', {
+          type: 'string',
+          default: './appended',
+          describe: 'destination folder'
       })
-    },
-    function (argv) {
-      console.log(argv.url)
-    }
-  )
-  .help()
 
-  .command(
-    'restore',
-    'Restore appended folder',
-    function (yargs) {
-      return yargs.option('e', {
-        alias: 'extract',
-        describe: 'Restore'
+      yargs.positional('size', {
+          type: 'number',
+          default: 5,
+          describe: 'volume size'
       })
-    },
-    function (argv) {
-      console.log(argv.url)
-    }
-  )
+  }, (argv) => {
+      append(argv.source, argv.target, argv.size)
+  })
+
+  .command('restore [source] [target]', 'restore volumes to file system', (yargs) => {
+      yargs.positional('source', {
+      type: 'string',
+      default: './appended',
+      describe: 'appended folder'
+      });
+
+      yargs.positional('target', {
+          type: 'string',
+          default: './node_modules',
+          describe: 'target folder'
+      })
+  }, (argv) => {
+      restore(argv.source, argv.target);
+  })
   .help()
-
-  .argv
-
-
-// TODO: use commaargv; //action, source, target, volume
-
-
-
-// if (argv.volume  3 && argv.distance < 53.5) {
-//     console.log('Plunder more riffiwobbles!')
-// } else {
-//     console.log('Retreat from the xupptumblers!')
-// }
-
-// {
-//     action: append | split,
-//     source [default is the node_js of this project, can], 
-//     target [default will be "node_modules_appended" folder in the same level as node_modules],
-//     chunkSize [5MB default]
-// }
+  .argv;
+}

@@ -1,4 +1,32 @@
 #!/usr/bin/env node
+import os from 'os';
+import { execute } from './cli.js';
+
+function setup(){
+    console.time('Run time');
+
+    console.log(`Running on ${os.cpus().length} CPU cores.`);
+    //check if to set this variable BEFORE node starts
+    //https://dev.to/johnjardincodes/increase-node-js-performance-with-libuv-thread-pool-5h10
+    process.env.UV_THREADPOOL_SIZE = Math.min(4, os.cpus().length); //4 is node's default
+}
+
+function housekeep(){
+    process.env.UV_THREADPOOL_SIZE = 4;
+    console.timeEnd('Run time');
+}
+
+(function main(){
+    try{
+        setup();
+        execute();
+        housekeep();
+    }catch(e){
+        console.error(e);
+    }    
+})();
+
+
 
 /*
 1. Learn how to publish library to npm
@@ -10,28 +38,3 @@
 7. Make sure all IO operation are async written using promises
 8. Learn how to determine if a file is text or binary (use mime types or something like that)
 */
-
-function setup(){
-    console.time('Run time');
-    const OS = require('os')
-    //https://dev.to/johnjardincodes/increase-node-js-performance-with-libuv-thread-pool-5h10
-    process.env.UV_THREADPOOL_SIZE = Math.min(4, OS.cpus().length); //4 is node's default
-}
-
-function housekeep(){
-    process.env.UV_THREADPOOL_SIZE = 4;
-    console.timeEnd('Run time');
-}
-
-(function main(){
-    try{
-        setup();
-
-        //read args
-
-        housekeep();
-    }catch(e){
-        console.error(e);
-    }
-    
-})();

@@ -1,14 +1,17 @@
 import path from 'path';
-import { glob } from 'glob-promise'
+import glob from 'glob-promise';
 import { isBinaryFile } from "isbinaryfile";
 import { v4 as uuidv4 } from 'uuid';
-import { cliProgress } from'cli-progress';
 
-import { asyncMkdir, asyncCopyFile, asyncWriteFile, asyncStat, objectifyFile } from './common';
+import cliSpinners from 'cli-spinners';
+import ora from 'ora';
+
+import { asyncMkdir, asyncCopyFile, asyncWriteFile, asyncStat, objectifyFile } from './common.js';
+import ProgressBar from './ProgressBar.js';
 
 export async function buildFolderTreeIndex(allFiles, rootSourceFolder, rootTargetFolder){
     const result = new Set(allFiles.map(file => path.dirname(file).replace(rootSourceFolder, '')));
-    await asyncWriteFile(`${rootTargetFolder}/folders.idx`, result.join('\n'));
+    await asyncWriteFile(`${rootTargetFolder}/folders.idx`, Array.from(result).join('\n'));
 }
 
 export async function getAllFiles(rootSourceFolder){
@@ -20,7 +23,6 @@ export function divideBinariesAndTextFiles(files){
         binaries:[],
         texts:[]
     }
-
     for(const file of files){
         if(isBinaryNaive(file)){
             res.binaries.push(file);
@@ -29,6 +31,9 @@ export function divideBinariesAndTextFiles(files){
         }
     }
 
+    console.log(`extensions found: ${Array.from(new Set(files.map(f => path.extname(f).replace('.',''))))}`);
+    console.log(`texts: ${res.texts.length}, binary: ${res.binaries.length}`);
+    
     return res;
 }
 
@@ -38,18 +43,40 @@ async function getChunkSize(filePaths){
     return totalSize;
 }
 
+// https://snyk.io/advisor/npm-package/cli-progress/functions/cli-progress.Presets
+function progressBarDemo(){
+    const progressBar = new ProgressBar('Appending files');
+    let counter = 0;
+    const intervalId = setInterval(() => {
+        if(counter === 0){
+            progressBar.start(500, 0);
+            counter += 5;
+            return;
+        }
+        counter += 5;
+        progressBar.update(counter);
+        if(counter === 500){
+            progressBar.stop();
+            console.log('');
+            clearInterval(intervalId);
+        }
+    }, 500);
+}
+
 //https://www.npmjs.com/package/cli-progress
-export async function append(rootSourceFolder, rootTargetFolder, volumeThreshold = 5){
+export async function append(rootSourceFolder, rootTargetFolder, volumeThreshold){
     
-    //Scan and build folder tree index
-    //Show spinner
+    //start spinner
+    const spinner = ora({text:'Analyzing...', spinner: cliSpinners.dots});
+    spinner.start();
+
     const allFiles = await getAllFiles(rootSourceFolder);
+    console.log(allFiles);
     await buildFolderTreeIndex(allFiles, rootSourceFolder, rootTargetFolder);
     const dividedFiles = divideBinariesAndTextFiles(allFiles);
-
-    const progress = new cliProgress.SingleBar({
-        format: 'CLI Progress |' + colors.cyan('{bar}') + '| {percentage}% || {value}/{total} Chunks || Speed: {speed}',
-    }, cliProgress.Presets.shades_classic);
+    setTimeout(() => { spinner.stop() }, 5000);
+    // endspinner
+    return;
 
     let chunkSize = 20;
     const threshold = 1 * 1024 * 1024 * volumeThreshold;
@@ -111,7 +138,12 @@ export function isBinaryNaive(filePath){
         cs:true,
         ts:true,
         js:true,
+        mjs:true,
+        cjs:true,
+        hbs:true,
         txt:true,
+        markdown:true,
+        map:true,
         html:true,
         htm:true,
         css:true,
@@ -146,6 +178,6 @@ export function isBinaryNaive(filePath){
         log:true        
     };
 
-    const ext = path.extname(filePath.replace('.','').toLowerCase());
+    const ext = path.extname(filePath).replace('.','').toLowerCase();
     return !textFileExtensions[ext];
 }

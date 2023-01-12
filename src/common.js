@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { promisify } from 'util';
 
 export const asyncMkdir = promisify(fs.mkdir);
 export const asyncCopyFile = promisify(fs.copyFile);
