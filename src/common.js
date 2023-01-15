@@ -2,18 +2,25 @@ import fs from 'fs';
 import path from 'path';
 import { promisify } from 'util';
 
+import glob from 'glob-promise';
+import { v4 as uuidv4 } from 'uuid';
+
 export const asyncMkdir = promisify(fs.mkdir);
 export const asyncCopyFile = promisify(fs.copyFile);
 export const asyncReadFile = promisify(fs.readFile);
 export const asyncWriteFile = promisify(fs.writeFile);
 export const asyncStat = promisify(fs.stat);
 
+export async function getAllFiles(rootSourceFolder){
+    return await glob( `${rootSourceFolder}/**/*.*`);
+}
+
 export async function objectifyFile(sourceBaseFolder, filePath){
     const relativePath = filePath.replace(sourceBaseFolder, '');
-    const fileName = path.basename(filePath);
-    const text = asyncReadFile(filePath, 'utf8');
+    // const fileName = path.basename(filePath);
+    const text = await asyncReadFile(filePath, 'utf8');
     const encoded = encode(text);
-    return { relativePath, fileName, encoded };
+    return { relativePath, encoded }; //fileName
 }
 
 export function extractFile(rootDestinationFolder, fileObject){
@@ -32,4 +39,8 @@ function decode(base64String){
     }catch(e){
         return Buffer.from(base64String, 'base64').toString('ascii');
     }
+}
+
+export function uuidNoDashes(){
+    return uuidv4().replace(/-/gi, '');
 }

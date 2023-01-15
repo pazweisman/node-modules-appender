@@ -24,3 +24,28 @@ export default class ProgressBar{
         console.log('');
     }
 }
+
+// https://snyk.io/advisor/npm-package/cli-progress/functions/cli-progress.Presets
+function progressBarDemo(){
+    const progressBar = new ProgressBar('Appending files');
+    let counter = 0;
+    const intervalId = setInterval(() => {
+        if(counter === 0){
+            progressBar.start(500, 0);
+            counter += 5;
+            return;
+        }
+        counter += 5;
+        progressBar.update(counter);
+        if(counter === 500){
+            progressBar.stop();
+            console.log('');
+            clearInterval(intervalId);
+        }
+    }, 500);
+}
+
+function spinnerDemo(){
+    const spinner = ora({text:'Analyzing...', spinner: cliSpinners.dots});
+    setTimeout(() => { spinner.stop() }, 5000);
+}

@@ -22,11 +22,15 @@ export function execute(){
 
       yargs.positional('size', {
           type: 'number',
-          default: 5,
+          default: 4,
           describe: 'volume size'
       })
   }, (argv) => {
-      append(argv.source, argv.target, argv.size)
+        const source = argv.source.replace(/\\/gi, '/');
+        const target = argv.target.replace(/\\/gi, '/');
+        console.log(source);
+        console.log(target);
+        append(source, target, argv.size)
   })
 
   .command('restore [source] [target]', 'restore volumes to file system', (yargs) => {
