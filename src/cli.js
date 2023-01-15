@@ -28,8 +28,6 @@ export function execute(){
   }, (argv) => {
         const source = argv.source.replace(/\\/gi, '/');
         const target = argv.target.replace(/\\/gi, '/');
-        console.log(source);
-        console.log(target);
         append(source, target, argv.size)
   })
 

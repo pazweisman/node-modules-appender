@@ -9,7 +9,9 @@ export const asyncMkdir = promisify(fs.mkdir);
 export const asyncCopyFile = promisify(fs.copyFile);
 export const asyncReadFile = promisify(fs.readFile);
 export const asyncWriteFile = promisify(fs.writeFile);
+export const asyncExists = promisify(fs.exists);
 export const asyncStat = promisify(fs.stat);
+
 
 export async function getAllFiles(rootSourceFolder){
     return await glob( `${rootSourceFolder}/**/*.*`);

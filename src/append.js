@@ -4,9 +4,10 @@ import path from 'path';
 import cliSpinners from 'cli-spinners';
 import ora from 'ora';
 
-import { asyncMkdir, asyncCopyFile, asyncWriteFile, asyncStat, objectifyFile, uuidNoDashes, getAllFiles } from './common.js';
+import { asyncMkdir, asyncCopyFile, asyncWriteFile, asyncStat, objectifyFile, uuidNoDashes, getAllFiles, asyncExists } from './common.js';
 import ProgressBar from './ProgressBar.js';
 import Config from './config.js';
+import { fstat } from 'fs';
 
 export async function buildFolderTreeIndex(allFiles, sourceFolder, targetFolder){
     const result = new Set(allFiles.map(file => path.dirname(file).replace(sourceFolder, '')));
@@ -38,7 +39,7 @@ async function getChunkSize(filePaths){
 export async function append(sourceFolder, targetFolder, volumeThreshold){
     try{
         const dividedFiles = await beforeAppend(sourceFolder, targetFolder);
-        await handleTextFiles(sourceFolder, dividedFiles.texts, targetFolder, volumeThreshold);
+        // await handleTextFiles(sourceFolder, dividedFiles.texts, targetFolder, volumeThreshold);
         await handleBinaryFiles(dividedFiles.binaries, sourceFolder, targetFolder);
         console.log('DONE');
     }catch(e){
@@ -57,23 +58,20 @@ async function beforeAppend(sourceFolder, targetFolder){
     spinner.start();
 
     const allFiles = await getAllFiles(sourceFolder);
-    
-    
     await buildFolderTreeIndex(allFiles, sourceFolder, targetFolder);
     const dividedFiles = divideBinariesAndTextFiles(allFiles);
     spinner.stop();
     
     console.log('');
-    console.log(`extensions found: ${Array.from(new Set(allFiles.map(f => path.extname(f).replace('.',''))))}`);
-    console.log(`texts: ${dividedFiles.texts.length}, binary: ${dividedFiles.binaries.length}`);
+    // console.log(`extensions found: ${Array.from(new Set(allFiles.map(f => path.extname(f).replace('.',''))))}`);
+    console.log(`Found texts: ${dividedFiles.texts.length}, binary: ${dividedFiles.binaries.length}`);
 
     return dividedFiles;
 }
 
 async function handleTextFiles(sourceFolder, textFiles, targetFolder, volumeThreshold){
-    let chunkSize = 50; //TODO: optimize this number for minimum time, use trail ande error + manipulate uv_threadpool_size
     const threshold = 1 * 1024 * 1024 * volumeThreshold;
-    const chunks = Math.ceil(textFiles.length / chunkSize);
+    const chunks = Math.ceil(textFiles.length / Config.chunkSize); //TODO: optimize this number for minimum time, use trail ande error + manipulate uv_threadpool_size
 
     let accumulator = 0;
     let chunkFileObjects = [];
@@ -85,9 +83,9 @@ async function handleTextFiles(sourceFolder, textFiles, targetFolder, volumeThre
         if(index === 0){
             progressBar.start(textFiles.length, 0);
         }
-        const chunk = textFiles.slice(index * 20, Math.min(textFiles.length, (index + 1) * 20));
+        const chunk = textFiles.slice(index * Config.chunkSize, Math.min(textFiles.length, (index + 1) * Config.chunkSize));
         accumulator += await getChunkSize(chunk);
-        progressBarCounter += chunkSize;
+        progressBarCounter += Config.chunkSize;
         const fileObjects = await Promise.all(chunk.map(async (file) => await objectifyFile(sourceFolder, file)));
         chunkFileObjects = chunkFileObjects.concat(fileObjects);
 
@@ -108,33 +106,35 @@ export async function createVolume(targetFolder, volumeIndex, files){
 }
 
 async function handleBinaryFiles(binaryFiles, sourceFolder, targetFolder){
-    //TODO: use progress bar instead of spinner
-    const spinner = ora({text:'Handling binary files...', spinner: cliSpinners.dots});
-    
-    let spinnerCounter = 0;
+    const chunks = Math.ceil(binaryFiles.length / Config.chunkSize); //TODO: optimize this number for minimum time, use trail ande error + manipulate uv_threadpool_size
     const binariesIndex = [];
-    const promises = [];
     const binariesFolder = path.join(targetFolder, 'binaries');
-    const binariesFolderExists = await asyncStat(binariesFolder);
+    const binariesFolderExists = await asyncExists(binariesFolder);
     if(!binariesFolderExists){
         await asyncMkdir(binariesFolder);
     }
-
-    for(const file of binaryFiles){
-        if(spinnerCounter === 0){
-            spinner.start();
+    const progressBar = new ProgressBar('Copying binary files');
+    for(let index = 0; index < chunks; index++){
+        if(index === 0){
+            progressBar.start(binaryFiles.length, 0);
         }
-        const uniqeName = toUniqueFileName(file);
-        const relativeToSource = uniqeName.replace(sourceFolder, '');
-        binariesIndex.push(relativeToSource);
-        promises.push(asyncCopyFile(file, `${targetFolder}/binaries/${path.basename(uniqeName)}`));
-        spinnerCounter++;
+        console.log(111);
+
+        const chunk = binaryFiles.slice(index * Config.chunkSize, Math.min(binaryFiles.length, (index + 1) * Config.chunkSize));
+        await Promise.all(chunk.map((file) => { 
+            const uniqeName = toUniqueFileName(file);
+            const relativeToSource = uniqeName.replace(sourceFolder, '');
+            binariesIndex.push(relativeToSource);
+            return asyncCopyFile(file, `${binariesFolder}/${path.basename(toUniqueFileName(file))}`)
+        }));
+
+        if(index > 0){
+            progressBar.update(index);
+        }
     }
 
     await asyncWriteFile(`${targetFolder}/binaries.idx`, binariesIndex.join('\n'));
-    await Promise.all(promises);
-
-    spinner.stop();
+    progressBar.stop();
 }
 
 function toUniqueFileName(filePath){

@@ -47,6 +47,6 @@ function getTextFileExtensionsDictionary(){
 export default {
     textFileExtensions:getTextFileExtensions(),
     textFileExtensionsDictionary:getTextFileExtensionsDictionary(),
-    chunkSize:50,
+    chunkSize:30,
     folderStructureIndexFile:'folders.idx'
 }
