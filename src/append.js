@@ -2,6 +2,7 @@ import path from 'path';
 
 import cliSpinners from 'cli-spinners';
 import ora from 'ora';
+import chalk from 'chalk';
 
 import { asyncMkdir, asyncCopyFile, asyncWriteFile, asyncStat, objectifyFile, uuidNoDashes, getAllFiles, asyncExists } from './common.js';
 import ProgressBar from './ProgressBar.js';
@@ -40,7 +41,7 @@ export async function append(sourceFolder, targetFolder, volumeThreshold){
         const dividedFiles = await beforeAppend(sourceFolder, targetFolder);
         await handleTextFiles(sourceFolder, dividedFiles.texts, targetFolder, volumeThreshold);
         await handleBinaryFiles(dividedFiles.binaries, sourceFolder, targetFolder);
-        console.log('DONE');
+        console.log('DONE 🧻🧻🧻🧻🧻 🚽🚽🚽🚽🚽🚽 📂📂📂📂📂📂📂 🔤🔤🔤🔤🔤🔤');
     }catch(e){
         console.log(e);
     }
@@ -72,14 +73,15 @@ async function beforeAppend(sourceFolder, targetFolder){
 async function handleTextFiles(sourceFolder, textFiles, targetFolder, volumeThreshold){
     const threshold = 1 * 1024 * 1024 * volumeThreshold;
     //TODO: optimize this number for minimum time, use trail ande error + manipulate uv_threadpool_size
-    const chunks = Math.ceil(textFiles.length / Config.chunkSize); 
-
+    
     let accumulator = 0;
     let chunkFileObjects = [];
     let progressBarCounter = 0;
-    const progressBar = new ProgressBar('Appending text files');
     let volumeIndex = 0;
-
+    
+    const progressBar = new ProgressBar('Appending text files');
+    const chunks = Math.ceil(textFiles.length / Config.chunkSize); 
+    
     for(let index = 0; index <= chunks; index++){
         if(index === 0){
             progressBar.start(textFiles.length, 0);
@@ -90,7 +92,7 @@ async function handleTextFiles(sourceFolder, textFiles, targetFolder, volumeThre
         const fileObjects = await Promise.all(chunk.map(async (file) => await objectifyFile(sourceFolder, file)));
         chunkFileObjects = chunkFileObjects.concat(fileObjects);
 
-        if(accumulator >= threshold){
+        if(accumulator >= threshold || index === chunks){ //write the last volume when it passed the volume size threshold or this is the last volume
             await createVolume(targetFolder, volumeIndex, chunkFileObjects);
             accumulator = 0;
             chunkFileObjects = [];
@@ -98,7 +100,8 @@ async function handleTextFiles(sourceFolder, textFiles, targetFolder, volumeThre
             progressBar.update(progressBarCounter);
         }
     }
-    progressBar.update(textFiles.length);
+
+    // progressBar.update(textFiles.length);
     progressBar.stop();
 }
 
