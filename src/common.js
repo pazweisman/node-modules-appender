@@ -12,22 +12,24 @@ export const asyncWriteFile = promisify(fs.writeFile);
 export const asyncExists = promisify(fs.exists);
 export const asyncStat = promisify(fs.stat);
 
+export async function getAllFiles(folder){
+    return await glob( `${folder}/**/*.*`, { nodir:true, dot:true }); //include hidden
+}
 
-export async function getAllFiles(rootSourceFolder){
-    return await glob( `${rootSourceFolder}/**/*.*`);
+export async function getAllVolumes(folder){
+    return await glob( `${folder}/volume*.json`, { nodir:true });
 }
 
 export async function objectifyFile(sourceBaseFolder, filePath){
     const relativePath = filePath.replace(sourceBaseFolder, '');
-    // const fileName = path.basename(filePath);
     const text = await asyncReadFile(filePath, 'utf8');
     const encoded = encode(text);
-    return { relativePath, encoded }; //fileName
+    return { relativePath, encoded };
 }
 
-export function extractFile(rootDestinationFolder, fileObject){
+export function extractFile(targetFolder, fileObject){
     const decoded = decode(fileObject.encoded);
-    const destination = path.join(rootDestinationFolder, fileObject.relativePath, fileObject.fileName);
+    const destination = path.join(targetFolder, fileObject.relativePath);
     return asyncWriteFile(destination, decoded);
 }
 

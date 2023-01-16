@@ -28,7 +28,7 @@ export function execute(){
   }, (argv) => {
         const source = argv.source.replace(/\\/gi, '/');
         const target = argv.target.replace(/\\/gi, '/');
-        append(source, target, argv.size)
+        append(source, target, argv.size);
   })
 
   .command('restore [source] [target]', 'restore volumes to file system', (yargs) => {
@@ -44,7 +44,9 @@ export function execute(){
           describe: 'target folder'
       })
   }, (argv) => {
-      restore(argv.source, argv.target);
+        const source = argv.source.replace(/\\/gi, '/');
+        const target = argv.target.replace(/\\/gi, '/');
+        restore(source, target);
   })
   .help()
   .argv;

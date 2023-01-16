@@ -48,5 +48,7 @@ export default {
     textFileExtensions:getTextFileExtensions(),
     textFileExtensionsDictionary:getTextFileExtensionsDictionary(),
     chunkSize:30,
-    folderStructureIndexFile:'folders.idx'
+    folderStructureIndexFile:'folders.json',
+    binariesFolder:'binaries',
+    binariesIndexFile:'binaries.json',
 }

@@ -3,8 +3,6 @@ import os from 'os';
 import { execute } from './cli.js';
 
 function setup(){
-    console.time('Run time');
-
     console.log(`Running on ${os.cpus().length} CPU cores.`);
     //check if to set this variable BEFORE node starts
     //https://dev.to/johnjardincodes/increase-node-js-performance-with-libuv-thread-pool-5h10
@@ -12,15 +10,15 @@ function setup(){
 }
 
 function housekeep(){
+    console.log("housekeep");
     process.env.UV_THREADPOOL_SIZE = 4;
-    console.timeEnd('Run time');
 }
 
 (function main(){
     try{
-        setup();
+        // setup();
         execute();
-        housekeep();
+        // housekeep();
     }catch(e){
         console.error(e);
     }    

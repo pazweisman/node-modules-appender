@@ -1,17 +1,15 @@
 import path from 'path';
 
-// import { isBinaryFile } from "isbinaryfile"; //TODO: test this library for performance and correctness
 import cliSpinners from 'cli-spinners';
 import ora from 'ora';
 
 import { asyncMkdir, asyncCopyFile, asyncWriteFile, asyncStat, objectifyFile, uuidNoDashes, getAllFiles, asyncExists } from './common.js';
 import ProgressBar from './ProgressBar.js';
 import Config from './config.js';
-import { fstat } from 'fs';
 
 export async function buildFolderTreeIndex(allFiles, sourceFolder, targetFolder){
     const result = new Set(allFiles.map(file => path.dirname(file).replace(sourceFolder, '')));
-    await asyncWriteFile(`${targetFolder}/${Config.folderStructureIndexFile}`, Array.from(result).join('\n'));
+    await asyncWriteFile(`${targetFolder}/${Config.folderStructureIndexFile}`, JSON.stringify(Array.from(result)));
 }
 
 export function divideBinariesAndTextFiles(files){
@@ -37,14 +35,16 @@ async function getChunkSize(filePaths){
 
 //https://www.npmjs.com/package/cli-progress
 export async function append(sourceFolder, targetFolder, volumeThreshold){
+    console.time('Append files');
     try{
         const dividedFiles = await beforeAppend(sourceFolder, targetFolder);
-        // await handleTextFiles(sourceFolder, dividedFiles.texts, targetFolder, volumeThreshold);
+        await handleTextFiles(sourceFolder, dividedFiles.texts, targetFolder, volumeThreshold);
         await handleBinaryFiles(dividedFiles.binaries, sourceFolder, targetFolder);
         console.log('DONE');
     }catch(e){
         console.log(e);
     }
+    console.timeEnd('Append files');
 }
 
 async function beforeAppend(sourceFolder, targetFolder){
@@ -71,7 +71,8 @@ async function beforeAppend(sourceFolder, targetFolder){
 
 async function handleTextFiles(sourceFolder, textFiles, targetFolder, volumeThreshold){
     const threshold = 1 * 1024 * 1024 * volumeThreshold;
-    const chunks = Math.ceil(textFiles.length / Config.chunkSize); //TODO: optimize this number for minimum time, use trail ande error + manipulate uv_threadpool_size
+    //TODO: optimize this number for minimum time, use trail ande error + manipulate uv_threadpool_size
+    const chunks = Math.ceil(textFiles.length / Config.chunkSize); 
 
     let accumulator = 0;
     let chunkFileObjects = [];
@@ -79,7 +80,7 @@ async function handleTextFiles(sourceFolder, textFiles, targetFolder, volumeThre
     const progressBar = new ProgressBar('Appending text files');
     let volumeIndex = 0;
 
-    for(let index = 0; index < chunks; index++){
+    for(let index = 0; index <= chunks; index++){
         if(index === 0){
             progressBar.start(textFiles.length, 0);
         }
@@ -108,32 +109,31 @@ export async function createVolume(targetFolder, volumeIndex, files){
 async function handleBinaryFiles(binaryFiles, sourceFolder, targetFolder){
     const chunks = Math.ceil(binaryFiles.length / Config.chunkSize); //TODO: optimize this number for minimum time, use trail ande error + manipulate uv_threadpool_size
     const binariesIndex = [];
-    const binariesFolder = path.join(targetFolder, 'binaries');
+    const binariesFolder = path.join(targetFolder, Config.binariesFolder);
     const binariesFolderExists = await asyncExists(binariesFolder);
     if(!binariesFolderExists){
         await asyncMkdir(binariesFolder);
     }
     const progressBar = new ProgressBar('Copying binary files');
-    for(let index = 0; index < chunks; index++){
+    for(let index = 0; index <= chunks; index++){
         if(index === 0){
             progressBar.start(binaryFiles.length, 0);
         }
-        console.log(111);
-
         const chunk = binaryFiles.slice(index * Config.chunkSize, Math.min(binaryFiles.length, (index + 1) * Config.chunkSize));
-        await Promise.all(chunk.map((file) => { 
+        const promises = chunk.map((file) => { 
             const uniqeName = toUniqueFileName(file);
             const relativeToSource = uniqeName.replace(sourceFolder, '');
             binariesIndex.push(relativeToSource);
-            return asyncCopyFile(file, `${binariesFolder}/${path.basename(toUniqueFileName(file))}`)
-        }));
+            return asyncCopyFile(file, path.join(binariesFolder, path.basename(uniqeName)));
+        });
 
-        if(index > 0){
-            progressBar.update(index);
-        }
+        await Promise.all(promises);
+
+        progressBar.update(chunk.length);
     }
 
-    await asyncWriteFile(`${targetFolder}/binaries.idx`, binariesIndex.join('\n'));
+    await asyncWriteFile(path.join(targetFolder, Config.binariesIndexFile), JSON.stringify(binariesIndex));
+    progressBar.update(binaryFiles.length);
     progressBar.stop();
 }
 
