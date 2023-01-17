@@ -2,6 +2,11 @@ import fs from 'fs';
 import path from 'path';
 import { promisify } from 'util';
 
+import chalk from 'chalk';
+import cliSpinners from 'cli-spinners';
+import ora from 'ora';
+import cliProgress from 'cli-progress';
+
 import glob from 'glob-promise';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -47,4 +52,49 @@ function decode(base64String){
 
 export function uuidNoDashes(){
     return uuidv4().replace(/-/gi, '');
+}
+
+export function yellow(text){
+    console.log(chalk.yellow(text));
+}
+
+export function blue(text){
+    console.log(chalk.blue(text));
+}
+
+export function green(text){
+    console.log(chalk.green(text));
+}
+
+export function red(text){
+    console.log(chalk.red(text));
+}
+
+export function createSpinner(prompt){
+    const spinner = ora({text:prompt, spinner: cliSpinners.dots});
+    spinner.start();
+    return spinner;
+}
+
+export class ProgressBar{
+    constructor(name, size = 25, type = 'rect'){
+        this.progressBar = new cliProgress.SingleBar({
+            format: `${name} |{bar}| {value}/{total} {percentage}% {duration_formatted}`,
+            barsize: size,
+            hideCursor: true,
+            stopOnComplete: true
+        }, type === 'rect' ? cliProgress.Presets.rect : type === 'legacy' ? cliProgress.Presets.legacy : cliProgress.Presets.shades_classic);
+    }
+
+    start(totalValue, startValue = 0){
+        this.progressBar.start(totalValue, startValue);
+    }
+
+    update(value){
+        this.progressBar.update(value);
+    }
+
+    stop(){
+        this.progressBar.stop();
+    }
 }

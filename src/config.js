@@ -1,3 +1,5 @@
+import os from 'os';
+
 const jsSourceCodeExtensions = ['ts','js','mjs','cjs','hbs','map','jsx','tsx','vue','svelte','lock','promisify','es6','coffee'];
 const dotnetSourceCodeExtensions = ['cs','cshtml','aspx','csproj'];
 const phpSourceCodeExtensions = ['php'];
@@ -47,7 +49,7 @@ function getTextFileExtensionsDictionary(){
 export default {
     textFileExtensions:getTextFileExtensions(),
     textFileExtensionsDictionary:getTextFileExtensionsDictionary(),
-    chunkSize:30,
+    chunkSize:os.cpus().length, //{1:1.07, 2:0.55, 3:0.51 ,4:0.49, 10: ??, 20: ??, 30:1.11,}   
     folderStructureIndexFile:'folders.json',
     binariesFolder:'binaries',
     binariesIndexFile:'binaries.json',

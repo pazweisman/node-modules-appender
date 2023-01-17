@@ -1,15 +1,11 @@
 import path from 'path';
 
-import cliSpinners from 'cli-spinners';
-import ora from 'ora';
-
-import { asyncMkdir, asyncCopyFile, asyncExists, asyncReadFile, extractFile, getAllVolumes } from './common.js';
-import ProgressBar from './ProgressBar.js';
+import { asyncMkdir, asyncCopyFile, asyncExists, asyncReadFile, extractFile, getAllVolumes, blue, red, green, yellow, createSpinner, ProgressBar } from './common.js';
 import Config from './config.js';
 
 export async function restore(sourceFolder, targetFolder){
     console.time('Restore files');
-    console.log(`Restoring ${sourceFolder} into ${targetFolder}`);
+    yellow(`Restoring ${sourceFolder} into ${targetFolder}`);
     try{
         await restoreFolderTree(sourceFolder, targetFolder);
         await restoreTextVolumes(sourceFolder, targetFolder);
@@ -22,12 +18,11 @@ export async function restore(sourceFolder, targetFolder){
 } 
 
 export async function restoreFolderTree(sourceFolder, targetFolder){
-    const spinner = ora({text:'Restoring folder structure...', spinner: cliSpinners.dots});
-    spinner.start();
+    const spinner = createSpinner('Restoring folder structure...');
     const folderStructureFilePath = path.join(sourceFolder, Config.folderStructureIndexFile);
     const folderStructureFilePathExists = await asyncExists(folderStructureFilePath);
     if(!folderStructureFilePathExists){
-        console.log(`ERROR ${folderStructureFilePath} NOT FOUND`);
+        red(`ERROR ${folderStructureFilePath} NOT FOUND`);
         return;
     }
 
@@ -99,6 +94,6 @@ async function restoreBinaryFiles(sourceFolder, targetFolder){
             progressBar.update(accumulator);
         }
     }else{
-        console.log('No binaries index file found');
+        yellow('No binaries index file found');
     }
 }

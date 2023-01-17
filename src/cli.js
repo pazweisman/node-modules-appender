@@ -22,8 +22,8 @@ export function execute(){
 
       yargs.positional('size', {
           type: 'number',
-          default: 4,
-          describe: 'volume size'
+          default: 5,
+          describe: 'approximate text volume size in megabytes'
       })
   }, (argv) => {
         const source = argv.source.replace(/\\/gi, '/');

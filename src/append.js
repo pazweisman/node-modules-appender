@@ -1,11 +1,6 @@
 import path from 'path';
 
-import cliSpinners from 'cli-spinners';
-import ora from 'ora';
-import chalk from 'chalk';
-
-import { asyncMkdir, asyncCopyFile, asyncWriteFile, asyncStat, objectifyFile, uuidNoDashes, getAllFiles, asyncExists } from './common.js';
-import ProgressBar from './ProgressBar.js';
+import { asyncMkdir, asyncCopyFile, asyncWriteFile, asyncStat, objectifyFile, uuidNoDashes, getAllFiles, asyncExists, yellow, green, red, blue, createSpinner, ProgressBar } from './common.js';
 import Config from './config.js';
 
 export async function buildFolderTreeIndex(allFiles, sourceFolder, targetFolder){
@@ -41,9 +36,9 @@ export async function append(sourceFolder, targetFolder, volumeThreshold){
         const dividedFiles = await beforeAppend(sourceFolder, targetFolder);
         await handleTextFiles(sourceFolder, dividedFiles.texts, targetFolder, volumeThreshold);
         await handleBinaryFiles(dividedFiles.binaries, sourceFolder, targetFolder);
-        console.log('DONE 🧻🧻🧻🧻🧻 🚽🚽🚽🚽🚽🚽 📂📂📂📂📂📂📂 🔤🔤🔤🔤🔤🔤');
+        yellow(`DONE`);
     }catch(e){
-        console.log(e);
+        red(e);
     }
     console.timeEnd('Append files');
 }
@@ -51,28 +46,23 @@ export async function append(sourceFolder, targetFolder, volumeThreshold){
 async function beforeAppend(sourceFolder, targetFolder){
     const targetFolderExists = await asyncStat(targetFolder);
     if(!targetFolderExists){
-        console.log(`Create target folder ${targetFolder}`);
-        asyncMkdir(targetFolder);
+        yellow(`Create target folder ${targetFolder}`);
+        asyncMkdir(targetFolder, {recursive: true});
     }
 
-    const spinner = ora({text:'Analyzing source folder...', spinner: cliSpinners.dots});
-    spinner.start();
-
+    const spinner = createSpinner('Analyzing source folder files...');
     const allFiles = await getAllFiles(sourceFolder);
     await buildFolderTreeIndex(allFiles, sourceFolder, targetFolder);
     const dividedFiles = divideBinariesAndTextFiles(allFiles);
     spinner.stop();
-    
-    console.log('');
+    green(`Text files: ${dividedFiles.texts.length}, binary files: ${dividedFiles.binaries.length}`);
     // console.log(`extensions found: ${Array.from(new Set(allFiles.map(f => path.extname(f).replace('.',''))))}`);
-    console.log(`Found texts: ${dividedFiles.texts.length}, binary: ${dividedFiles.binaries.length}`);
 
     return dividedFiles;
 }
 
 async function handleTextFiles(sourceFolder, textFiles, targetFolder, volumeThreshold){
-    const threshold = 1 * 1024 * 1024 * volumeThreshold;
-    //TODO: optimize this number for minimum time, use trail ande error + manipulate uv_threadpool_size
+    const byteThreshold = 1 * 1024 * 1024 * volumeThreshold * 0.75; //base64 is ~133% size of 1 byte, thus need to compensate
     
     let accumulator = 0;
     let chunkFileObjects = [];
@@ -92,7 +82,8 @@ async function handleTextFiles(sourceFolder, textFiles, targetFolder, volumeThre
         const fileObjects = await Promise.all(chunk.map(async (file) => await objectifyFile(sourceFolder, file)));
         chunkFileObjects = chunkFileObjects.concat(fileObjects);
 
-        if(accumulator >= threshold || index === chunks){ //write the last volume when it passed the volume size threshold or this is the last volume
+        //write the last volume when it passed the volume size threshold or this is the last volume
+        if(accumulator >= byteThreshold || index === chunks){ 
             await createVolume(targetFolder, volumeIndex, chunkFileObjects);
             accumulator = 0;
             chunkFileObjects = [];
@@ -100,8 +91,6 @@ async function handleTextFiles(sourceFolder, textFiles, targetFolder, volumeThre
             progressBar.update(progressBarCounter);
         }
     }
-
-    // progressBar.update(textFiles.length);
     progressBar.stop();
 }
 
@@ -110,7 +99,7 @@ export async function createVolume(targetFolder, volumeIndex, files){
 }
 
 async function handleBinaryFiles(binaryFiles, sourceFolder, targetFolder){
-    const chunks = Math.ceil(binaryFiles.length / Config.chunkSize); //TODO: optimize this number for minimum time, use trail ande error + manipulate uv_threadpool_size
+    const chunks = Math.ceil(binaryFiles.length / Config.chunkSize);
     const binariesIndex = [];
     const binariesFolder = path.join(targetFolder, Config.binariesFolder);
     const binariesFolderExists = await asyncExists(binariesFolder);
@@ -145,7 +134,7 @@ function toUniqueFileName(filePath){
     const folderName = path.dirname(filePath);
     const uid = uuidNoDashes();
 
-    return `${folderName}/#~${uid}~#${fileName}`;
+    return `${folderName}/#~${uid}~#${fileName}`; //length is 36
 }
 
 function isBinaryNaive(filePath){
