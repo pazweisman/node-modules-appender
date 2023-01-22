@@ -11,7 +11,7 @@ export async function restore(sourceFolder, targetFolder){
         await restoreTextVolumes(sourceFolder, targetFolder);
         await restoreBinaryFiles(sourceFolder, targetFolder);
     }catch(e){
-        console.log(e);
+        red(e);
     }
     
     console.timeEnd('Restore files');
