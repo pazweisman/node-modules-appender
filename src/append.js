@@ -133,8 +133,9 @@ function toUniqueFileName(filePath){
     const fileName = path.basename(filePath);
     const folderName = path.dirname(filePath);
     const uid = uuidNoDashes();
-
-    return `${folderName}/#~${uid}~#${fileName}`; //length is 36
+    const uniquePrefix = `#~${uid}~#`; //length is 36 fix
+    const uniqueFileName = `${uniquePrefix}${fileName}`;
+    return `${folderName}/${uniqueFileName}`;
 }
 
 function isBinaryNaive(filePath){

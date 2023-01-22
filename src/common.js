@@ -4,8 +4,8 @@ import { promisify } from 'util';
 
 import chalk from 'chalk';
 import cliSpinners from 'cli-spinners';
-import ora from 'ora';
 import cliProgress from 'cli-progress';
+import ora from 'ora';
 
 import glob from 'glob-promise';
 import { v4 as uuidv4 } from 'uuid';

@@ -49,8 +49,8 @@ function getTextFileExtensionsDictionary(){
 export default {
     textFileExtensions:getTextFileExtensions(),
     textFileExtensionsDictionary:getTextFileExtensionsDictionary(),
-    chunkSize:os.cpus().length, //{1:1.07, 2:0.55, 3:0.51 ,4:0.49, 10: ??, 20: ??, 30:1.11,}   
+    chunkSize:os.cpus().length,   
     folderStructureIndexFile:'folders.json',
     binariesFolder:'binaries',
-    binariesIndexFile:'binaries.json',
+    binariesIndexFile:'binaries.json'
 }
