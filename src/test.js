@@ -1,5 +1,3 @@
-import path from 'path';
-
 import { getAllFiles } from './common.js';
 
 async function test(original = 'D:/node_modules_tester/node_modules', restored = 'D:/node_modules_tester/restored'){
