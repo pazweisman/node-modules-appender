@@ -1,14 +1,12 @@
 import commandLineUsage from 'command-line-usage'
 
 const logo = `
-                 _                                       _           
-                | |                                     | |          
- _ __   ___   __| | ___  __ _ _ __  _ __   ___ _ __   __| | ___ _ __ 
-| '_ \ / _ \ / _' |/ _ \/ _' | '_ \| '_ \ / _ \ '_ \ / _' |/ _ \ '__|
-| | | | (_) | (_| |  __/ (_| | |_) | |_) |  __/ | | | (_| |  __/ |   
-|_| |_|\___/ \__,_|\___|\__,_| .__/| .__/ \___|_| |_|\__,_|\___|_|   
-                             | |   | |                               
-                             |_|   |_|                               
+
+███    ██  ██████  ██████  ███████  █████  ██████  ██████  ███████ ███    ██ ██████  ███████ ██████  
+████   ██ ██    ██ ██   ██ ██      ██   ██ ██   ██ ██   ██ ██      ████   ██ ██   ██ ██      ██   ██ 
+██ ██  ██ ██    ██ ██   ██ █████   ███████ ██████  ██████  █████   ██ ██  ██ ██   ██ █████   ██████  
+██  ██ ██ ██    ██ ██   ██ ██      ██   ██ ██      ██      ██      ██  ██ ██ ██   ██ ██      ██   ██ 
+██   ████  ██████  ██████  ███████ ██   ██ ██      ██      ███████ ██   ████ ██████  ███████ ██   ██ 
 `;
 
 const sections = [
@@ -24,28 +22,28 @@ const sections = [
       { //insert options list limited to action type
         name: 'action',
         alias: 'a',
-        type: 'string',
+        type: String,
         typeLabel: '{underline file}',
         description: 'The action to perform, could be "append" or "restore".',
       },
       {
         name: 'source',
         alias: 's',
-        type: 'string',
+        type: String,
         typeLabel: '{underline file}',
         description: 'Source folder. When the action is "append" the default is the closest "node_modules" folder, if the action is restore, the default will be "./appended".'
       },
       {
         name: 'target',
         alias: 't',
-        type: 'string',
+        type: String,
         typeLabel: '{underline file}',
         description: 'Target folder. When the action is "append" the default is "./appended", if the action is restore, the default will be "./node_modules".'
       },
       {
         name: 'volume',
         alias: 'v',
-        type: 'number',
+        type: Number,
         default: 5,
         typeLabel: '{underline file}',
         description: 'Volume size, by default it is ~5 MB, relevant only for the "append" action.'
@@ -56,12 +54,12 @@ const sections = [
       }
     ]
   }
-]
+];
 
 const usage = commandLineUsage(sections);
 
-usage.source = usage.source ? usage.source.replace(/\\/gi, '/') : null;
-usage.target = usage.target ? usage.target.replace(/\\/gi, '/') : null;
+// usage.source = usage.source ? usage.source.replace(/\\/gi, '/') : null;
+// usage.target = usage.target ? usage.target.replace(/\\/gi, '/') : null;
 
 if(usage.action === 'append' && !usage.source){
     usage.source = nodeModulesPath();

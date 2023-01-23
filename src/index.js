@@ -5,6 +5,9 @@ import { restore } from './restore.js';
 import { yellow } from './common.js';
 
 export function main(){
+    console.log('args:');
+    console.log(args);
+    return;
     try{
         switch(args.action){
             case 'append':
