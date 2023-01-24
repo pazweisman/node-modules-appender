@@ -5,11 +5,21 @@ import { restore } from './restore.js';
 import { yellow } from './common.js';
 
 export function main(){
+    
+    const logo = `
+                  _                                       _           
+    _ _   ___  __| | ___  __ _  _ __  _ __  ___  _ _   __| | ___  _ _ 
+   | ' \ / _ \/ _' |/ -_)/ _' || '_ \| '_ \/ -_)| ' \ / _' |/ -_)| '_|
+   |_||_|\___/\__,_|\___|\__,_|| .__/| .__/\___||_||_|\__,_|\___||_|  
+                               |_|   |_|                              
+  
+  `;
+    yellow(logo);
     console.log('args:');
     console.log(args);
     return;
     try{
-        switch(args.action){
+        switch(args.command){
             case 'append':
                 append(args.source, args.target, args.volume);
                 break;
