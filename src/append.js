@@ -1,6 +1,7 @@
 import path from 'path';
+import { isBinaryFile } from 'isbinaryfile';
 
-import { asyncMkdir, asyncCopyFile, asyncWriteFile, asyncStat, objectifyFile, uuidNoDashes, getAllFiles, asyncExists, yellow, green, red, blue, createSpinner, ProgressBar } from './common.js';
+import { asyncMkdir, asyncCopyFile, asyncWriteFile, asyncDeleteFolder, asyncStat, objectifyFile, uuidNoDashes, getAllFiles, asyncExists, yellow, green, red, blue, createSpinner, ProgressBar, createZip } from './common.js';
 import Config from './config.js';
 
 export async function buildFolderTreeIndex(allFiles, sourceFolder, targetFolder){
@@ -8,7 +9,8 @@ export async function buildFolderTreeIndex(allFiles, sourceFolder, targetFolder)
     await asyncWriteFile(`${targetFolder}/${Config.folderStructureIndexFile}`, JSON.stringify(Array.from(result)));
 }
 
-export function divideBinariesAndTextFiles(files){
+export function divideBinariesAndTextFilesNaive(files){
+    console.log(`extensions found: ${Array.from(new Set(files.map(f => path.extname(f).replace('.',''))))}`);
     const res = {
         binaries:[],
         texts:[]
@@ -23,6 +25,27 @@ export function divideBinariesAndTextFiles(files){
     return res;
 }
 
+export async function divideBinariesAndTextFiles(files){
+    const timerName = `divideBinariesAndTextFilesAsync @${files.length}`;
+    console.time(timerName);
+    const res = {
+        binaries:[],
+        texts:[]
+    }
+
+    await Promise.all(files.map(async (file) => {
+        const binary = await isBinaryFile(file);
+        if(binary){
+            res.binaries.push(file);
+        }else{
+            res.texts.push(file);
+        }
+    }));
+
+    console.timeEnd(timerName);
+    return res;
+}
+
 async function getChunkSize(filePaths){
     const stats = await Promise.all(filePaths.map((filePath => asyncStat(filePath))));
     const totalSize = stats.reduce((acc, stat) => acc += stat.size, 0);
@@ -32,10 +55,20 @@ async function getChunkSize(filePaths){
 //https://www.npmjs.com/package/cli-progress
 export async function append(sourceFolder, targetFolder, volumeThreshold){
     console.time('Append files');
+    let zipFileName = null;
+    if(targetFolder.toLowerCase().endsWith('.zip')){
+        zipFileName = path.basename(targetFolder);
+        targetFolder = targetFolder.replace('.zip','');
+    }
     try{
         const dividedFiles = await beforeAppend(sourceFolder, targetFolder);
         await handleTextFiles(sourceFolder, dividedFiles.texts, targetFolder, volumeThreshold);
         await handleBinaryFiles(dividedFiles.binaries, sourceFolder, targetFolder);
+
+        if(zipFileName){
+            await createZip(targetFolder, zipFileName);
+            await asyncDeleteFolder(appendedPath, { recursive: true, force: true })
+        }
         yellow(`DONE`);
     }catch(e){
         red(e);
@@ -53,11 +86,10 @@ async function beforeAppend(sourceFolder, targetFolder){
     const spinner = createSpinner('Analyzing source folder files...');
     const allFiles = await getAllFiles(sourceFolder);
     await buildFolderTreeIndex(allFiles, sourceFolder, targetFolder);
-    const dividedFiles = divideBinariesAndTextFiles(allFiles);
+    const dividedFiles = await divideBinariesAndTextFiles(allFiles);
     spinner.stop();
     green(`Text files: ${dividedFiles.texts.length}, binary files: ${dividedFiles.binaries.length}`);
-    // console.log(`extensions found: ${Array.from(new Set(allFiles.map(f => path.extname(f).replace('.',''))))}`);
-
+    
     return dividedFiles;
 }
 

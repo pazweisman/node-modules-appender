@@ -6,9 +6,9 @@ import chalk from 'chalk';
 import cliSpinners from 'cli-spinners';
 import cliProgress from 'cli-progress';
 import ora from 'ora';
-
 import glob from 'glob-promise';
 import { v4 as uuidv4 } from 'uuid';
+import { AdmZip } from 'adm-zip';
 
 export const asyncMkdir = promisify(fs.mkdir);
 export const asyncCopyFile = promisify(fs.copyFile);
@@ -16,6 +16,7 @@ export const asyncReadFile = promisify(fs.readFile);
 export const asyncWriteFile = promisify(fs.writeFile);
 export const asyncExists = promisify(fs.exists);
 export const asyncStat = promisify(fs.stat);
+export const asyncDeleteFolder = promisify(fs.rmdir);
 
 export async function getAllFiles(folder){
     return await glob( `${folder}/**/*.*`, { nodir:true, dot:true }); //include hidden
@@ -98,3 +99,28 @@ export class ProgressBar{
         this.progressBar.stop();
     }
 }
+
+export async function createZip(appendedPath, zipFileName){
+    const spinner = createSpinner(`Zipping files into ${zipFileName}`);
+    try{
+        const zip = new AdmZip();
+        zip.addLocalFolder(appendedPath);
+        zip.writeZip(zipFileName);
+    }catch(e){
+        red(e)
+    }finally{
+        spinner.stop();
+    }
+}
+
+export async function extractZip(filepath, outputDir) {
+    const spinner = createSpinner(`Extracting zip into ${outputDir}`);
+    try {
+        const zip = new AdmZip(filepath);
+        zip.extractAllTo(outputDir);
+    } catch (e) {
+        red(e);
+    } finally{
+        spinner.stop();
+    }
+  }

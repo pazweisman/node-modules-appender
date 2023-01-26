@@ -1,10 +1,16 @@
 import path from 'path';
 
-import { asyncMkdir, asyncCopyFile, asyncExists, asyncReadFile, extractFile, getAllVolumes, blue, red, green, yellow, createSpinner, ProgressBar } from './common.js';
+import { asyncMkdir, asyncCopyFile, asyncExists, asyncReadFile, extractFile, getAllVolumes, blue, red, green, yellow, createSpinner, ProgressBar, extractZip } from './common.js';
 import Config from './config.js';
 
 export async function restore(sourceFolder, targetFolder){
     console.time('Restore files');
+    let zipFileName = null;
+    if(path.basename(sourceFolder).toLowerCase().endsWith('.zip')){
+        zipFileName = sourceFolder;
+        const extractTo = path.join(path.dirname(sourceFolder), path.basename(sourceFolder).toLowerCase().replace('.zip', ''));
+        await extractZip(zipFileName, extractTo);
+    }
     yellow(`Restoring ${sourceFolder} into ${targetFolder}`);
     try{
         await restoreFolderTree(sourceFolder, targetFolder);
