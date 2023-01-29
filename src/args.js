@@ -34,5 +34,8 @@ const args = yargs(process.argv.slice(2))
     .help()
     .argv;
 
+args.source = args.source.replace(/\\/gi, '/');
+args.target = args.target.replace(/\\/gi, '/');
+
 const { _, source, target, volume } = args;
 export default {command:_, source, target, volume};

@@ -26,8 +26,9 @@ export async function divideBinariesAndTextFilesNaive(files){
     return res;
 }
 
+//TODO: test it
 export async function divideBinariesAndTextFiles(files){
-    const timerName = `divideBinariesAndTextFilesAsync @${files.length}`;
+    const timerName = `divideBinariesAndTextFiles @${files.length}`;
     console.time(timerName);
     const res = {
         binaries:[],
@@ -45,6 +46,7 @@ export async function divideBinariesAndTextFiles(files){
         }else{
             res.texts.push(file);
         }
+        return true;
     }));
 
     console.timeEnd(timerName);
@@ -71,8 +73,8 @@ export async function append(sourceFolder, targetFolder, volumeThreshold){
         await handleBinaryFiles(dividedFiles.binaries, sourceFolder, targetFolder);
 
         if(zipFileName){
-            await createZip(targetFolder, zipFileName);
-            await asyncDeleteFolder(appendedPath, { recursive: true, force: true })
+            await createZip(targetFolder, `${targetFolder}.zip`);
+            await asyncDeleteFolder(targetFolder, { recursive: true, force: true })
         }
         yellow(`DONE`);
     }catch(e){
@@ -91,7 +93,7 @@ async function beforeAppend(sourceFolder, targetFolder){
     const spinner = createSpinner('Analyzing source folder files...');
     const allFiles = await getAllFiles(sourceFolder);
     await buildFolderTreeIndex(allFiles, sourceFolder, targetFolder);
-    const dividedFiles = await divideBinariesAndTextFiles(allFiles);
+    const dividedFiles = await divideBinariesAndTextFilesNaive(allFiles);
     spinner.stop();
     green(`Text files: ${dividedFiles.texts.length}, binary files: ${dividedFiles.binaries.length}`);
     

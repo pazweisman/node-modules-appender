@@ -8,7 +8,7 @@ import cliProgress from 'cli-progress';
 import ora from 'ora';
 import glob from 'glob-promise';
 import { v4 as uuidv4 } from 'uuid';
-import { AdmZip } from 'adm-zip';
+import AdmZip from 'adm-zip';
 
 export const asyncMkdir = promisify(fs.mkdir);
 export const asyncCopyFile = promisify(fs.copyFile);
@@ -16,7 +16,7 @@ export const asyncReadFile = promisify(fs.readFile);
 export const asyncWriteFile = promisify(fs.writeFile);
 export const asyncExists = promisify(fs.exists);
 export const asyncStat = promisify(fs.stat);
-export const asyncDeleteFolder = promisify(fs.rmdir);
+export const asyncDeleteFolder = promisify(fs.rm);
 
 export async function getAllFiles(folder){
     return await glob( `${folder}/**/*.*`, { nodir:true, dot:true }); //include hidden
@@ -100,12 +100,13 @@ export class ProgressBar{
     }
 }
 
-export async function createZip(appendedPath, zipFileName){
-    const spinner = createSpinner(`Zipping files into ${zipFileName}`);
+export async function createZip(sourceFolderPath, zipFilePath){
+    yellow(`Zipping ${sourceFolderPath} into ${zipFilePath}`);
+    const spinner = createSpinner(`Zipping files into ${zipFilePath}`);
     try{
         const zip = new AdmZip();
-        zip.addLocalFolder(appendedPath);
-        zip.writeZip(zipFileName);
+        zip.addLocalFolder(sourceFolderPath);
+        zip.writeZip(zipFilePath);
     }catch(e){
         red(e)
     }finally{
@@ -114,6 +115,7 @@ export async function createZip(appendedPath, zipFileName){
 }
 
 export async function extractZip(filepath, outputDir) {
+    yellow(`Unzipping ${filepath} into ${filepath}`);
     const spinner = createSpinner(`Extracting zip into ${outputDir}`);
     try {
         const zip = new AdmZip(filepath);
