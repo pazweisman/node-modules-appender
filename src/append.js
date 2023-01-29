@@ -9,7 +9,8 @@ export async function buildFolderTreeIndex(allFiles, sourceFolder, targetFolder)
     await asyncWriteFile(`${targetFolder}/${Config.folderStructureIndexFile}`, JSON.stringify(Array.from(result)));
 }
 
-export function divideBinariesAndTextFilesNaive(files){
+//Obsolete?
+export async function divideBinariesAndTextFilesNaive(files){
     console.log(`extensions found: ${Array.from(new Set(files.map(f => path.extname(f).replace('.',''))))}`);
     const res = {
         binaries:[],
@@ -32,8 +33,12 @@ export async function divideBinariesAndTextFiles(files){
         binaries:[],
         texts:[]
     }
-
+    let counter = 0;
     await Promise.all(files.map(async (file) => {
+        counter++;
+        if(counter / 100 === 0){
+            console.log(`${counter} / ${files.length}`);
+        }
         const binary = await isBinaryFile(file);
         if(binary){
             res.binaries.push(file);
