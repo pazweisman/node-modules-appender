@@ -1,6 +1,4 @@
-import fs from 'fs';
 import path from 'path';
-import { promisify } from 'util';
 
 import chalk from 'chalk';
 import cliSpinners from 'cli-spinners';
@@ -10,13 +8,15 @@ import glob from 'glob-promise';
 import { v4 as uuidv4 } from 'uuid';
 import AdmZip from 'adm-zip';
 
-export const asyncMkdir = promisify(fs.mkdir);
-export const asyncCopyFile = promisify(fs.copyFile);
-export const asyncReadFile = promisify(fs.readFile);
-export const asyncWriteFile = promisify(fs.writeFile);
-export const asyncExists = promisify(fs.exists);
-export const asyncStat = promisify(fs.stat);
-export const asyncDeleteFolder = promisify(fs.rm);
+// import fs from 'fs';
+// import { promisify } from 'util';
+// export const asyncMkdir = promisify(fs.mkdir);
+// export const asyncCopyFile = promisify(fs.copyFile);
+// export const asyncReadFile = promisify(fs.readFile);
+// export const asyncWriteFile = promisify(fs.writeFile);
+// export const asyncExists = promisify(fs.exists);
+// export const asyncStat = promisify(fs.stat);
+// export const asyncDeleteFolder = promisify(fs.rm);
 
 export async function getAllFiles(folder){
     return await glob( `${folder}/**/*.*`, { nodir:true, dot:true }); //include hidden

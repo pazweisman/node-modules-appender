@@ -1,7 +1,9 @@
 import path from 'path';
+import fs from 'fs';
 import { isBinaryFile } from 'isbinaryfile';
 
-import { asyncMkdir, asyncCopyFile, asyncWriteFile, asyncDeleteFolder, asyncStat, objectifyFile, uuidNoDashes, getAllFiles, asyncExists, yellow, green, red, blue, createSpinner, ProgressBar, createZip } from './common.js';
+import { objectifyFile, uuidNoDashes, getAllFiles, yellow, green, red, createSpinner, ProgressBar, createZip } from './common.js';
+//asyncMkdir, asyncCopyFile, asyncWriteFile, asyncDeleteFolder, asyncStat, asyncExists,
 import Config from './config.js';
 
 export async function buildFolderTreeIndex(allFiles, sourceFolder, targetFolder){
@@ -74,7 +76,7 @@ export async function append(sourceFolder, targetFolder, volumeThreshold){
 
         if(zipFileName){
             await createZip(targetFolder, `${targetFolder}.zip`);
-            await asyncDeleteFolder(targetFolder, { recursive: true, force: true })
+            await fs.promises.rm(targetFolder, { recursive: true, force: true })
         }
         yellow(`DONE`);
     }catch(e){
@@ -87,7 +89,7 @@ async function beforeAppend(sourceFolder, targetFolder){
     const targetFolderExists = await asyncStat(targetFolder);
     if(!targetFolderExists){
         yellow(`Create target folder ${targetFolder}`);
-        asyncMkdir(targetFolder, {recursive: true});
+        fs.promises.mkdir(targetFolder, {recursive: true});
     }
 
     const spinner = createSpinner('Analyzing source folder files...');
@@ -141,9 +143,9 @@ async function handleBinaryFiles(binaryFiles, sourceFolder, targetFolder){
     const chunks = Math.ceil(binaryFiles.length / Config.chunkSize);
     const binariesIndex = [];
     const binariesFolder = path.join(targetFolder, Config.binariesFolder);
-    const binariesFolderExists = await asyncExists(binariesFolder);
+    const binariesFolderExists = await fs.promises.exists(binariesFolder);
     if(!binariesFolderExists){
-        await asyncMkdir(binariesFolder);
+        await fs.promises.mkdir(binariesFolder);
     }
     const progressBar = new ProgressBar('Copying binary files');
     for(let index = 0; index <= chunks; index++){
@@ -155,7 +157,7 @@ async function handleBinaryFiles(binaryFiles, sourceFolder, targetFolder){
             const uniqeName = toUniqueFileName(file);
             const relativeToSource = uniqeName.replace(sourceFolder, '');
             binariesIndex.push(relativeToSource);
-            return asyncCopyFile(file, path.join(binariesFolder, path.basename(uniqeName)));
+            return fs.promises.copyFile(file, path.join(binariesFolder, path.basename(uniqeName)));
         });
 
         await Promise.all(promises);
@@ -163,7 +165,7 @@ async function handleBinaryFiles(binaryFiles, sourceFolder, targetFolder){
         progressBar.update(chunk.length);
     }
 
-    await asyncWriteFile(path.join(targetFolder, Config.binariesIndexFile), JSON.stringify(binariesIndex));
+    await fs.promises.writeFile(path.join(targetFolder, Config.binariesIndexFile), JSON.stringify(binariesIndex));
     progressBar.update(binaryFiles.length);
     progressBar.stop();
 }

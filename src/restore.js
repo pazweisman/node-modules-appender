@@ -1,6 +1,8 @@
 import path from 'path';
+import fs from 'fs';
 
-import { asyncMkdir, asyncCopyFile, asyncExists, asyncReadFile, extractFile, getAllVolumes, blue, red, green, yellow, createSpinner, ProgressBar, extractZip } from './common.js';
+import { extractFile, getAllVolumes, blue, red, green, yellow, createSpinner, ProgressBar, extractZip } from './common.js';
+//asyncMkdir, asyncCopyFile, asyncExists, asyncReadFile,
 import Config from './config.js';
 
 export async function restore(sourceFolder, targetFolder){
@@ -26,7 +28,7 @@ export async function restore(sourceFolder, targetFolder){
 export async function restoreFolderTree(sourceFolder, targetFolder){
     const spinner = createSpinner('Restoring folder structure...');
     const folderStructureFilePath = path.join(sourceFolder, Config.folderStructureIndexFile);
-    const folderStructureFilePathExists = await asyncExists(folderStructureFilePath);
+    const folderStructureFilePathExists = await fs.promises.exists(folderStructureFilePath);
     if(!folderStructureFilePathExists){
         red(`ERROR ${folderStructureFilePath} NOT FOUND`);
         return;
@@ -34,17 +36,17 @@ export async function restoreFolderTree(sourceFolder, targetFolder){
 
     const taregtFolderExists = await asyncExists(targetFolder);
     if(!taregtFolderExists){
-        asyncMkdir(taregtFolderExists);
+        await fs.promises.mkdir(taregtFolderExists);
     }
 
-    const content = await asyncReadFile(folderStructureFilePath, 'utf8');
+    const content = await fs.promises.readFile(folderStructureFilePath, 'utf8');
     const folders = JSON.parse(content);
     const chunks = Math.ceil(folders.length / Config.chunkSize);
     for(let i = 0; i < chunks; i++){
         const slice = folders.slice(i * Config.chunkSize, Math.min(folders.length, (i + 1) * Config.chunkSize));
         await Promise.all(slice.map((folder) => {
             const folderPath = path.join(targetFolder, folder);
-            return asyncMkdir(folderPath, {recursive: true});
+            return fs.promises.mkdir(folderPath, {recursive: true});
         }));
     }
     spinner.stop();
@@ -67,7 +69,7 @@ async function restoreTextVolumes(sourceFolder, targetFolder){
 }
 
 async function restoreVolume(volumeFilePath, targetFolder){
-    const content = await asyncReadFile(volumeFilePath, 'utf8');
+    const content = await fs.promises.readFile(volumeFilePath, 'utf8');
     const files = JSON.parse(content);
     const chunks = Math.ceil(files.length / Config.chunkSize);
     for(let i = 0; i <= chunks; i++){
@@ -79,10 +81,10 @@ async function restoreVolume(volumeFilePath, targetFolder){
 
 async function restoreBinaryFiles(sourceFolder, targetFolder){
     const binariesIndexFilePath = path.join(sourceFolder, Config.binariesIndexFile);
-    const binariesIndexFilePathExists = await asyncExists(binariesIndexFilePath);
+    const binariesIndexFilePathExists = await fs.promises.exists(binariesIndexFilePath);
     if(binariesIndexFilePathExists){
         const progressBar = new ProgressBar('Restoring text files');
-        const binariesContent = await asyncReadFile(binariesIndexFilePath, "utf8");
+        const binariesContent = await fs.promises.readFile(binariesIndexFilePath, "utf8");
         const binaries = JSON.parse(binariesContent);
         const chunks = Math.ceil(binaries.length / Config.chunkSize);
         let accumulator = 0;
@@ -93,7 +95,7 @@ async function restoreBinaryFiles(sourceFolder, targetFolder){
             const slice = binaries.slice(i * Config.chunkSize, Math.min(binaries.length, (i + 1) * Config.chunkSize));
             const promises = slice.map(file => {
                 const cleanName = path.join(path.dirname(file), path.basename(file).substring(36));
-                return asyncCopyFile(path.join(sourceFolder, Config.binariesFolder, path.basename(file)), path.join(targetFolder, cleanName));
+                return fs.promises.copyFile(path.join(sourceFolder, Config.binariesFolder, path.basename(file)), path.join(targetFolder, cleanName));
             });
             await Promise.all(promises);
             accumulator += slice.length;
