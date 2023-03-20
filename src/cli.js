@@ -5,6 +5,7 @@ import nodeModulesPath from 'node_modules-path';
 import { append } from './append.js';
 import { restore } from './restore.js';
 
+//Absolete???
 export function executeWithCommandLIneArgs(){
   yargs(process.argv.slice(2))
   .scriptName("nodeappender")

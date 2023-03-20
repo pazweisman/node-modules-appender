@@ -1,5 +1,7 @@
 import { getAllFiles } from './common.js';
 
+
+//TODO: use jest to run all the tests
 async function test(original = 'D:/node_modules_tester/node_modules', restored = 'D:/node_modules_tester/restored'){
     const originalFiles = (await getAllFiles(original)).map(file => file.replace(original,''));
     const restoredFiles = (await getAllFiles(restored)).map(file => file.replace(restored,''));
